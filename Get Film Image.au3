@@ -1,8 +1,3 @@
-; https://api.themoviedb.org/3/search/movie?api_key=&language=en-US&query=A Beautiful Mind
-; https://www.themoviedb.org/talk/53c11d4ec3a3684cf4006400
-; https://image.tmdb.org/t/p/w500/ifn7yLH7W69MdrEEkNzCyO8rTmL.jpg
-; https://www.autoitscript.com/forum/topic/191687-get-data-from-json/
-
 #include <Array.au3>
 #include <File.au3>
 #include <MsgBoxConstants.au3>
@@ -12,11 +7,60 @@
 #include <FileConstants.au3>
 #include <WinAPIFiles.au3>
 
-; Vars
-Global $docURL = "https://api.themoviedb.org/3/search/movie?api_key="
-Global $API = ""
+#include <ButtonConstants.au3>
+#include <ComboConstants.au3>
+#include <EditConstants.au3>
+#include <GUIConstantsEx.au3>
+#include <WindowsConstants.au3>
 
-getFilesList("C:\Users\Hasan\Desktop\Film" , ".jpg" , "original") ; "w45", "w92", "w154", "w185", "w342", "w500", "w780" , "w780", "w1280" , "original"
+#Region ### START Koda GUI section ### Form=C:\- App -\Autoit\Get Film Image\GUI\Form_FilmImages.kxf
+$Form_FilmImages = GUICreate("Get Film Images", 602, 148, -1, -1)
+$FolderGroup = GUICtrlCreateGroup("Folder", 8, 8, 585, 121)
+$Input_Folder = GUICtrlCreateInput("Insert Your Movies Folder", 24, 40, 553, 21)
+$Button_Download = GUICtrlCreateButton("Download", 376, 80, 75, 25)
+$Combo_Type = GUICtrlCreateCombo("", 24, 80, 73, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
+GUICtrlSetData(-1, ".jpg|.jpeg|.png|.bmp", ".jpg")
+$Combo_Quality = GUICtrlCreateCombo("", 120, 80, 145, 25, BitOR($CBS_DROPDOWN,$CBS_AUTOHSCROLL))
+GUICtrlSetData(-1, "original|w1280|w780|w780|w600_and_h900_bestv2|w500|w342|w185|w154|w92|w45", "original")
+$Button_Config = GUICtrlCreateButton("Config", 504, 80, 75, 25)
+GUICtrlCreateGroup("", -99, -99, 1, 1)
+GUISetState(@SW_SHOW)
+#EndRegion ### END Koda GUI section ###
+
+; Vars
+Global $cFilePath = @TempDir & "\GetFilmImage-config.ini"
+Global $docURL = "https://api.themoviedb.org/3/search/movie?api_key="
+Global $API = IniRead($cFilePath, "API", "Key", "Default Value")
+
+If FileExists($cFilePath) = False Then
+	createIniFile() ; Create config.ini
+EndIf
+
+While 1
+	$nMsg = GUIGetMsg()
+	Switch $nMsg
+		Case $GUI_EVENT_CLOSE
+			Exit
+
+		Case $Button_Download
+			downloadImage()
+
+		Case $Button_Config
+			ShellExecute($cFilePath)
+
+	EndSwitch
+WEnd
+
+
+Func downloadImage()
+
+	$folder = GUICtrlRead($Input_Folder)
+	$type = GUICtrlRead($Combo_Type)
+	$quality = GUICtrlRead($Combo_Quality)
+
+	getFilesList($folder , $type , $quality)
+
+EndFunc
 
 
 Func getFilesList($dir , $fileType , $size)
@@ -38,21 +82,22 @@ Func getFilesList($dir , $fileType , $size)
 
 	$maxArray = UBound($aFileList, 1) ; Get Total Arrays
 	For $i = 1 To $maxArray Step 1
-
-		; Display a progress bar window.
-		ProgressOn("Downloading...", "Downloading Images", "0%")
-
 		$filmName = $aFileList[$i] ; Film name without address ( The Matrix 1999 )
 		$filmAddress = $aFileAddress[$i] ; Film name with address ( C:\Desktop\Film\The Matrix 1999 )
 		$regFilmName = StringRegExpReplace($filmName, '\d', '') ; Film name without year ( The Matrix )
 		$regFilmYear = StringRegExpReplace($filmName, '[^[:digit:]]', '') ; Film name without name  ( 1999 )
-		If FileExists( $filmAddress & "\" & $filmName & $fileType ) Then
+
+		If FileExists( $filmAddress & "\" & $filmName & " - " & $size & $fileType ) Then
 			ProgressOff()
-			MsgBox(0,"File Exist","You Do Not Need To Download This Files" & @CRLF & "Files Exists")
-			Return False
 		Else
-			InetGet( getImage($regFilmName,$regFilmYear , $size), $filmAddress & "\" & $filmName & $fileType) ; Get film poster and put it in folder directory
-;~ 			WriteMovieList( $filmName & " ---- " & getImage($regFilmName,$regFilmYear , "w500") ) ; Get Poster And Write Address To "movies.txt"
+			; Display a progress bar window.
+			ProgressOn("Downloading...", "Downloading Images", "0%" , "" , "" , 16)
+
+			 ; Get film poster and put it in folder directory
+			InetGet( getImage($regFilmName,$regFilmYear , $size), $filmAddress & "\" & $filmName & " - " & $size & $fileType)
+
+			; Get Poster And Write Address To "movies.txt"
+;~ 			WriteMovieList( $filmName & " ---- " & getImage($regFilmName,$regFilmYear , "w500") )
 
 			; Progress
 			For $j = 1 To 100 Step 1
@@ -62,7 +107,7 @@ Func getFilesList($dir , $fileType , $size)
 
 		; Progress
 		ProgressSet(100, "", $filmName & " -- Complete")
-		Sleep(1000)
+		Sleep(150)
 
 		ProgressOff()
 
@@ -74,16 +119,20 @@ EndFunc   ;==> getFilesList
 
 Func getImage($movieName , $movieYear , $size)
 
-	$URL = $docURL & $API & "&query=" & $movieName & "&year=" & $movieYear
-	$data = _INetGetSource($URL)
-	$object = json_decode($data)
-	$imageURL = "https://image.tmdb.org/t/p/" & $size
+	If $API = "YOUR_API_HERE" Then
+		MsgBox(0,"API Key Required","You need a API key from TMDB website")
+	Else
+		$URL = $docURL & $API & "&query=" & $movieName & "&year=" & $movieYear
+		$data = _INetGetSource($URL)
+		$object = json_decode($data)
+		$imageURL = "https://image.tmdb.org/t/p/" & $size
 
-	$results = json_get($object, '[results]')
-	$i = json_get($results, '[0]')
-	$poster = json_get($i, '[poster_path]')
-	$finalPoster = $imageURL & $poster
-	Return $finalPoster
+		$results = json_get($object, '[results]')
+		$i = json_get($results, '[0]')
+		$poster = json_get($i, '[poster_path]')
+		$finalPoster = $imageURL & $poster
+		Return $finalPoster
+	EndIf
 
 EndFunc
 
@@ -103,6 +152,14 @@ Func WriteMovieList($data)
     FileClose($hFileOpen)
 
 EndFunc   ;==> WriteMovieList
+
+
+Func createIniFile()
+
+	MsgBox(0,"API Key Required","You need a API key from TMDB website")
+	IniWrite ($cFilePath , "API" , "Key", "Your_API_HERE")
+
+EndFunc
 
 
 Func regexString()
