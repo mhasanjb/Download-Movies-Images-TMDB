@@ -72,16 +72,14 @@ Func getFilesList($dir , $fileType , $size)
 	; Error Handler
     If @error = 1 Then
         MsgBox($MB_SYSTEMMODAL, "", "Path was invalid.")
-        Exit
     EndIf
     If @error = 4 Then
         MsgBox($MB_SYSTEMMODAL, "", "No file(s) were found.")
-        Exit
     EndIf
 
 
-	$maxArray = UBound($aFileList, 1) ; Get Total Arrays
-	For $i = 1 To $maxArray Step 1
+;~ 	$maxArray =  UBound($aFileList, 1); Get Total Arrays
+	For $i = 1 To UBound ($aFileList) - 1
 		$filmName = $aFileList[$i] ; Film name without address ( The Matrix 1999 )
 		$filmAddress = $aFileAddress[$i] ; Film name with address ( C:\Desktop\Film\The Matrix 1999 )
 		$regFilmName = StringRegExpReplace($filmName, '\d', '') ; Film name without year ( The Matrix )
