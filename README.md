@@ -6,6 +6,9 @@ And in that folder you have movies like ( The matrix 1999 , Harry potter , etc )
 And you want to have this movies images ( poster )    
 You can use this application    
 
+# Preview
+![alt text](https://github.com/mhasanjb/Download-Movies-Images-TMDB/blob/master/Preview.png  "(Preview)Get Film Images - By M.Hasan Jabbari")
+
 # How to use
 01- Create a account in "https://www.themoviedb.org"    
 02- Go to : https://www.themoviedb.org/settings/api  
